@@ -51,7 +51,7 @@ tarbsd build --release 15.0
 tarbsd build --release 15-LATEST
 ```
 
-First build will take longer, but subsequent ones are quicker. It uses in-memory zfs pool, so everyting is snappy and there's no unnecesary writes to your storage medium. ZFS also allows builder to use snapshots to restore the image to a an earlier state before each build. The pool is 2 gigs by default. To initialize a bigger or a smaller one, issue wrk-init command first.
+First build will take longer, but subsequent ones are quicker. It uses in-memory zfs pool for building, so everyting is snappy and there's no unnecesary writes to your storage medium. ZFS also allows builder to use snapshots to restore the image to a an earlier state before each build.
 
 When in hurry, pass --quick option to the builder. You'll get the image quicker, but it will be bigger and require more memory to boot. For small images, size difference might not be huge, but it gets bigger as /usr gets bigger. Useful for builds that are intended to be just prototypes anyway.
 ```
@@ -96,6 +96,7 @@ List of packages to be installed.
 
 ## Other miscellaneous things ##
 * tarBSD lives in memory. If you need non-volatile storage, you need to mount it. If you mount something in /usr (which is read-only), make a corressponding empty directory to tarbsd/usr, so it can be mounted.
+* Because the image is built using in-memory file system, the system running the builder needs to have adequate amount of usable memory. Old Raspberry pis likely will struggle.
 * Many applications might be missing, but libraries are mostly there. Vast majority of packages should just work.
 * tarBSD requires [tarfs](https://man.freebsd.org/cgi/man.cgi?tarfs(5)), which was introduced in 14.2. Older releases are not supported.
 * Builder will automatically add fstab line for following pseudo filesystems if the kernel module is present either through a feature or manual include:
