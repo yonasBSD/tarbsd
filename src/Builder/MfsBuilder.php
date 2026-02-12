@@ -248,7 +248,7 @@ CONF;
         try
         {
             Process::fromShellCommandline(
-                'mount -t tmpfs -o size=1m tmpfs root/usr && makefs -b 5% boot/mfsroot root',
+                'mount -t tmpfs -o size=1m tmpfs root/usr && makefs -b 5% boot/mfsroot root && rm root/.usr.tar',
                 $this->wrk,
                 null, null, 1800
             )->mustRun(function ($type, $buffer) use ($verboseOutput)
@@ -269,72 +269,83 @@ CONF;
         Misc::zlibCompress($this->wrk . '/boot/mfsroot', $gzipLevel, $progressIndicator);
         $progressIndicator->finish('mfs image ready');
 
-        $this->wrkFs->checkSize(Misc::getFileSizeM($this->wrk . '/boot'));
-        Process::fromShellCommandline(
-            'makefs boot.img boot',
-            $this->wrk,
-            null, null, 1800
-        )->mustRun(function ($type, $buffer) use ($verboseOutput)
-        {
-            $verboseOutput->write($buffer);
-        });
-
-        $this->finalizeImage($output, $verboseOutput, $platform);
+        $this->writeFile($output, $verboseOutput, $platform);
     }
 
-    protected function finalizeImage(OutputInterface $output, OutputInterface $verboseOutput, string $platform) : void
+    protected function writeFile(OutputInterface $output, OutputInterface $verboseOutput, string $platform) : void
     {
+        $progressIndicator = $this->progressIndicator($output);
+        $progressIndicator->start('writing image');
+
+        $this->wrkFs->checkSize(Misc::getFileSizeM($this->wrk . '/boot'));
+
+        Process::fromShellCommandline(
+            'makefs boot.img boot && rm boot/mfsroot.gz',
+            $this->wrk,
+            null, null, 1800
+        )->mustRun(function ($type, $buffer) use ($verboseOutput, $progressIndicator)
+        {
+            $verboseOutput->write($buffer);
+            $progressIndicator->advance();
+        });
+
         $size = Misc::getFileSizeM($this->wrk . '/boot.img');
         $this->wrkFs->checkSize($size);
-        $fullsize = strval($size + 1) . 'm';
+        Misc::truncate($disk = $this->wrk . '/tarbsd.img', ($size + 1) * 1024 * 1024);
+        $md = $this->md = Misc::mdCreate($disk);
         $size = strval($size) . 'm';
 
         if ($platform === 'amd64')
         {
-            $cmd = <<<CMD
-truncate -s $fullsize tarbsd.img
-md=\$(mdconfig -f tarbsd.img)
-
-gpart create -s gpt "\$md"
-gpart add -b 40 -s 472 -t freebsd-boot "\$md"
-gpart add -t efi -s 748k "\$md"
-gpart add -t freebsd-ufs -s $size "\$md"
-gpart bootcode -b cache/pmbr -p cache/gptboot -i 1 "\$md"
-
-dd if=efi.img of=/dev/"\$md"p2 bs=128k
-dd if=boot.img of=/dev/"\$md"p3 bs=128k
-rm efi.img && rm boot.img
-rm cache/pmbr && rm cache/gptboot
-mdconfig -d -u "\$md"
+            $gpartCmd = <<<CMD
+gpart create -s gpt $md
+gpart add -b 40 -s 472 -t freebsd-boot $md
+gpart add -t efi -s 748k $md
+gpart add -t freebsd-ufs -s $size $md
+gpart bootcode -b cache/pmbr -p cache/gptboot -i 1 $md
 CMD;
+            $efiDev = '/dev/' . $md . 'p2';
+            $bootDev = '/dev/' . $md . 'p3';
         }
         elseif ($platform === 'aarch64')
         {
-            $cmd = <<<CMD
-truncate -s $fullsize tarbsd.img
-md=\$(mdconfig -f tarbsd.img)
-
-gpart create -s gpt "\$md"
-gpart add -t efi -s 960k "\$md"
-gpart add -t freebsd-ufs -s $size "\$md"
-
-dd if=efi.img of=/dev/"\$md"p1 bs=128k
-dd if=boot.img of=/dev/"\$md"p2 bs=128k
-rm efi.img && rm boot.img
-mdconfig -d -u "\$md"
+            $gpartCmd = <<<CMD
+gpart create -s gpt $md
+gpart add -t efi -s 960k $md
+gpart add -t freebsd-ufs -s $size $md
 CMD;
+            $efiDev = '/dev/' . $md . 'p1';
+            $bootDev = '/dev/' . $md . 'p2';
         }
         else
         {
             throw new \Exception;
         }
 
-        Process::fromShellCommandline(
-            $cmd, $this->wrk, null, null,  300
-        )->mustRun(function ($type, $buffer) use ($verboseOutput)
+        try
         {
-            $verboseOutput->write($buffer);
-        });
+            Process::fromShellCommandline(
+                $gpartCmd, $this->wrk, null, null,  300
+            )->mustRun(function ($type, $buffer) use ($verboseOutput, $progressIndicator)
+            {
+                $verboseOutput->write($buffer);
+                $progressIndicator->advance();
+            });
+            Misc::dd($this->wrk . '/efi.img', $efiDev, $progressIndicator);
+            Misc::dd($this->wrk . '/boot.img', $bootDev, $progressIndicator);
+        }
+        catch (\Exception $e)
+        {
+            Misc::mdDestroy($this->md);
+            throw $e;
+        }
+        $progressIndicator->finish('image written');
+        Misc::mdDestroy($this->md);
+        $this->fs->remove($this->wrk . '/efi.img');
+        $this->fs->remove($this->wrk . '/boot.img');
+        $this->fs->remove($this->wrk . '/cache/pmbr');
+        $this->fs->remove($this->wrk . '/cache/gptboot');
+        $this->md = null;
     }
 
     /**

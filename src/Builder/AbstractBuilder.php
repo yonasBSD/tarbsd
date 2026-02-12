@@ -42,6 +42,8 @@ abstract class AbstractBuilder implements EventSubscriberInterface, Icons
 
     protected ?array $modules;
 
+    public ?string $md = null;
+
     protected readonly Filesystem $fs;
 
     private readonly string $distributionFiles;
@@ -122,7 +124,7 @@ abstract class AbstractBuilder implements EventSubscriberInterface, Icons
         [$arch, $platform] = $this->config->getPlatform();
 
         $output->writeln(sprintf(
-            ' building image for %s',
+            self::CHECK . ' building image for <comment>%s</>',
             $platform
         ));
 
@@ -383,7 +385,7 @@ abstract class AbstractBuilder implements EventSubscriberInterface, Icons
                 {
                     $progressIndicator = $this->progressIndicator($output);
                     $progressIndicator->start(sprintf(
-                        "compressing %s using pigz-11, might take a while, will be cached.",
+                        "compressing %s using pigz-11, might take a while",
                         $file->getFilename(),
                     ));
                     Misc::pigzCompress((string) $file, 11, $progressIndicator);
