@@ -1,14 +1,15 @@
-root_pwhash: null
+# password is tarbsd
+root_pwhash: $2y$12$/F982r2u63jVY51Ym2bhIOGTaG7RAoctF8ubhoGRUda5BBBibKXOC
+# copy-paste your SSH key here
 root_sshkey: null
 backup: true
 busybox: false
 ssh: openssh
-platform: amd64
 features:
-    zfs: false
-    bsdinstall: false
+    zfs: true
+    bsdinstall: true
     geli: false
-    pf: true
+    pf: false
     ipfw: false
     wireguard: false
     wifi: false
@@ -19,7 +20,6 @@ features:
 modules:
     early:
     late:
-        - ipmi
 packages:
     - tmux
     - nano

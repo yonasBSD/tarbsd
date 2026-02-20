@@ -1,3 +1,13 @@
+## [upcoming] ##
+* Bsdinstall feature, which makes it easier to use tarBSD as an alternative FreeBSD
+  installer for cloud hosts for example.
+    * Set "bsdinstall: true" in the feature section of tarbsd.yml to enable.
+    * There's also an example for this.
+* Building an image takes less memory.
+* New chpass command to easily change root password of a tarBSD project.
+* Edge-case bug, which might cause build to fail has been fixed.
+* Small cosmetic UI improvements.
+
 ## 2026-02-10 ##
 * tarBSD motd got broken in previous version and has been fixed.
 * Building FreeBSD 14 images for aarch64 works now.
