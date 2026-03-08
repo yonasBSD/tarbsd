@@ -208,26 +208,13 @@ class Compiler extends Command
         $stubFiles = 0;
         $output->write("adding files for stubs ");
         foreach(
-            (new Finder)->files()->in(__DIR__)->depth('0')->notname('*.php')->sortByName()->reverseSorting()
+            (new Finder)->files()->in(__DIR__)->notname('*.php')->sortByName()->reverseSorting()
             as $file
         ) {
             $this->addFile($file);
             $stubFiles++;
         }
-        foreach(
-            (new Finder)->directories()->in(__DIR__)->depth('0')
-            as $dir
-        ) {
-            $dir = (string) $dir;
-            foreach((new Finder)->files()->in($dir) as $file)
-            {
-                if ($file->isFile())
-                {
-                    $this->addFile($file);
-                    $stubFiles++;
-                }
-            }
-        }
+
         $output->writeln(sprintf("%d files", $stubFiles));
         $output->writeln($constantsStr);
     }
@@ -433,15 +420,16 @@ class Compiler extends Command
         $file = (string) $file;
         $this->addFromString(
             substr(realpath($file), strlen($this->root) + 1),
-            $this->readFile($file)
+            $this->readFile($file),
+            fileperms($file)
         );
     }
 
-    protected function addFromString(string $path, string $contents)
+    protected function addFromString(string $path, string $contents, int $perms = 0555) : void
     {
         $this->files[$path] = $this->processFile(
             $path, $contents,
-            0555, 0
+            $perms, 0
         );
     }
 
