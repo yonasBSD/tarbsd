@@ -69,8 +69,10 @@ tarbsd build --release 15.0 -v
 
 ## tarbsd.yml options ##
 ### root_pwhash ###
+A hashed root password.
 
 ### root_sshkey ###
+SSH key (public version).
 
 ### backup ###
 Backup tarbsd.yml as well as the overlay directory inside the image. If you loose the computer, which created the image, you've got backup inside the image itself assuming it runs on another computer and you haven't lost that one too.
@@ -95,9 +97,8 @@ List of packages to be installed.
 
 ## Other miscellaneous things ##
 * tarBSD lives in memory. If you need non-volatile storage, you need to mount it. If you mount something in /usr (which is read-only), make a corressponding empty directory to tarbsd/usr, so it can be mounted.
-* Because the image is built using in-memory file system, the system running the builder needs to have adequate amount of usable memory. Old Raspberry pis likely will struggle.
+* Because the image is built using in-memory file system, the system running the builder needs to have adequate amount of usable memory.
 * Many applications might be missing, but libraries are mostly there. Vast majority of packages should just work.
-* tarBSD requires [tarfs](https://man.freebsd.org/cgi/man.cgi?tarfs(5)), which was introduced in 14.2. Older releases are not supported.
 * Builder will automatically add fstab line for following pseudo filesystems if the kernel module is present either through a feature or manual include:
   * procfs
   * fdescfs
@@ -105,7 +106,7 @@ List of packages to be installed.
   * linsysfs
 * SSH is on by default unless there's no SSH program. You can disable it by setting sshd_enabled="NO" or dropbear_enable="NO" in etc/rc.conf.
 * Base packages and compressed kernels are cached at /var/cache/tarbsd and this cache is shared across all tarbsd projects you might have. Other things such as port packages are cached locally at the project up until next boot.
-* Random reads across various places in /usr might be slightly slow due to obvious reason. Depending on applications, this might or might not be noticeable. Usually however, services are started at boot and that's it, so I guess this doesn't matter much for most. There are some tunables in tar, which might help, but I haven't researched them extremely closely yet.
+* Aarch64 images might not boot on every random development board due to their non-standard boot procedures. Raspberry pi for example, doesn't work yet, but support is planned.
 
 ## Contributing ##
 There's a compiler in the stubs directory. It spits out the executable, which is a [phar archive](https://www.php.net/manual/en/intro.phar.php). During development, you can just require vendor/autoload.php, create TarBSD\App and run that, but do at least occasional testing with a phar app too.
