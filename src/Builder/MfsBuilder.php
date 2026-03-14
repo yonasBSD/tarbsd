@@ -249,7 +249,6 @@ CONF;
             $this->root,
         );
 
-        $this->wrkFs->checkSize(Misc::getFileSizeM($this->root) - Misc::getFileSizeM($this->root . '/usr'));
         try
         {
             Process::fromShellCommandline(
@@ -263,12 +262,12 @@ CONF;
         }
         catch (\Exception $e)
         {
+            $this->wrkFsSize->stop();
             $umountUsr->mustRun();
             throw $e;
         }
         $umountUsr->mustRun();
 
-        $this->wrkFs->checkSize();
         //$progressIndicator = $this->progressIndicator($output);
         $progressIndicator->setMessage('compressing mfs image (gzip-' . $gzipLevel . ')');
         Misc::zlibCompress($this->wrk . '/boot/mfsroot', $gzipLevel, $progressIndicator);
@@ -285,7 +284,7 @@ CONF;
         $this->wrkFs->checkSize(Misc::getFileSizeM($this->wrk . '/boot'));
 
         Process::fromShellCommandline(
-            'makefs boot.img boot && rm boot/mfsroot.gz',
+            'makefs -b 0% -o optimization=space,minfree=0 boot.img boot && rm boot/mfsroot.gz',
             $this->wrk,
             null, null, 1800
         )->mustRun(function ($type, $buffer) use ($verboseOutput, $progressIndicator)
