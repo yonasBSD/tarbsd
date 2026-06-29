@@ -12,10 +12,10 @@ Because most of tarBSD is in a tightly compressed ([zstd-19](https://github.com/
 * a remote FreeBSD installer with SSH
 
 ## Design goals ##
-* Simple to use, yet configurable to suit wide range of use cases
-* Just one configuration file + an overlay directory
+* simple to use, yet configurable to suit wide range of use cases
+* just one configuration file + an overlay directory
 * pkgbase
-* Tightly compressed image
+* tightly compressed
 
 # Installing the builder tool #
 ### pkg/ports ###
@@ -56,7 +56,7 @@ It'll ask few questions, create a configuration file as well as an overlay direc
 First build will take longer due to base packages download, but they're cached for future use.
 ```
 # RELEASE version
-tarbsd build --release 15.0
+tarbsd build --release 15.1
 
 # LATEST here could mean STABLE or CURRENT depending on version
 tarbsd build --release 15-LATEST
@@ -64,17 +64,17 @@ tarbsd build --release 15-LATEST
 
 When in hurry, pass --quick option to the builder. You'll get the image quicker, but it will be bigger and require more memory to boot. For small images, size difference might not be huge, but it gets bigger as /usr gets bigger. Useful for builds that are intended to be just prototypes anyway.
 ```
-tarbsd build --release 15.0 --quick
+tarbsd build --release 15.1 --quick
 ```
 
-Raw .img (for bhyve, kvm and real computers) is always generated. If you have qemu-tools installed, it can also be converted to all sorts of random formats.
+Raw .img (for bhyve, kvm and real computers) is always generated. If you have [qemu](https://www.freshports.org/emulators/qemu/) installed, it can also be converted to all sorts of random formats.
 ```
-tarbsd build --release 15.0 qcow qcow2 vdi vmdk vhdx vpc parallels
+tarbsd build --release 15.1 qcow qcow2 vdi vmdk vhdx vpc parallels
 ```
 
 Verbose output doesn't quite show every single little detail yet, but if you like tar -v and pkg install being streamed to your console, you can have them.
 ```
-tarbsd build --release 15.0 -v
+tarbsd build --release 15.1 -v
 ```
 
 # tarbsd.yml options #
@@ -118,7 +118,7 @@ List of packages to be installed.
 * Aarch64 images might not boot on every random development board due to their non-standard boot procedures. Raspberry pi for example, doesn't work yet, but support is planned.
 
 # Contributing #
-There's a compiler in the stubs directory. It spits out the executable, which is a [phar archive](https://www.php.net/manual/en/intro.phar.php). During development, you can just require vendor/autoload.php, create TarBSD\App and run that, but do at least occasional testing with a phar app too.
+There's a compiler in the stubs directory. It spits out the executable, which is a [phar archive](https://www.php.net/manual/en/book.phar.php). During development, you can just require vendor/autoload.php, create TarBSD\App and run that, but do at least occasional testing with a phar app too.
 
 If you're not familiar with Symfony components, [here's the docs](https://symfony.com/doc/current/index.html). Relevant parts here are console, process, filesystem and finder.
 
